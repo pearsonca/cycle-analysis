@@ -14,7 +14,7 @@ firstday <- floor(background[,min(start)]/60/60/24)
 
 pth <- commandArgs(trailingOnly = T)[1]
 setwd(pth)
-untar("proc.tar.gz")
+if (file.exists("proc.tar.gz")) untar("proc.tar.gz")
 
 runs <- list.files(pth, pattern = "RData", full.names = T)
 pairs <- function(after, before, res) res[
