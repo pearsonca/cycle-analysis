@@ -16,7 +16,7 @@ pth <- commandArgs(trailingOnly = T)[1]
 setwd(pth)
 if (file.exists("proc.tar.gz")) untar("proc.tar.gz")
 
-runs <- list.files(pth, pattern = "RData", full.names = T)
+runs <- list.files(pattern = "RData", full.names = T)
 pairs <- function(after, before, res) res[
   after < end & start < before, .N, keyby=list(userA, userB, reason)
 ] 
