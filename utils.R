@@ -29,8 +29,8 @@ cores <- detectCores()
 
 score <- function(s, e, res, t) {
   prs <- pairs(s*24*60*60, e*24*60*60, res)
-  remap_ids <- data.table(user_id = prs[,unique(c(userA,userB))])[,new_user_id := .I, by=user_id]
-  relabelled <- data.table(userA=remap_ids[user_id == prs$userA, new_user_id], userB=remap_ids[user_id == prs$userB, new_user_id])
+  remap_ids <- data.table(user_id = prs[,unique(c(userA,userB))])[,new_user_id := .I, keyby=user_id]
+  relabelled <- data.table(userA=remap_ids[prs[,list(user_id=userA)]]$new_user_id, userB=remap_ids[prs[,list(user_id=userB)]]$new_user_id)
   el <- t(as.matrix(relabelled))
   dim(el) <- NULL
   g <- graph(el, directed = F)
