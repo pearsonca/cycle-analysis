@@ -1,0 +1,24 @@
+#!/bin/bash
+#PBS -r n
+#PBS -N cycle
+#PBS -o cycle.o
+#PBS -e cycle.err
+#PBS -m a
+#PBS -M cap10@ufl.edu
+#PBS -l walltime=1:00:00
+#PBS -l nodes=1:ppn=1
+#PBS -l pmem=1G
+#PBS -t 1-405
+
+module load R/3.2.0
+cd /scratch/lfs/cap10/cycle-analysis
+parameters=`cat sim-src.pars | tail -n +$PBS_ARRAYID | head -1`
+IFS=', ' read -a elems <<< "$parameters"
+sz=${elems[3]}
+k=${elems[4]}
+fr=${elems[5]}
+m=${elems[6]}
+l=${elems[7]}
+pth=${elems[0]}-${elems[1]}-${elems[2]}-$sz
+sub=output/$pth-$fr-$m-$l
+Rscript ../../utils.R $sub
