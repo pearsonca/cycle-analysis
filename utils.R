@@ -37,7 +37,7 @@ score <- function(s, e, res, t) {
   mapply(
     function(cyc, sz) if (length(cyc) != 0) {
       src <- unique(t(apply(matrix(unlist(cyc), byrow = T, ncol=sz), 1, sort)))
-      lsrc <- lapply(1:(dim(src)[2]), function(col) remap_ids[new_user_id == src[, col], user_id])
+      lsrc <- lapply(1:(dim(src)[2]), function(col) remap_ids[src[, col]]$user_id)
       lsrc$time=t
       do.call(data.table, lsrc)
     } else {
