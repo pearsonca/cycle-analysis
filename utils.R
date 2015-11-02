@@ -65,7 +65,7 @@ processList <- function(run, startDay=100, window = 14, endDay=startDay + 100*wi
   results
 }
 
-testAnalysis <- processList(run, window=14, endDay = 100+14*52)
+#testAnalysis <- processList(run, window=14, endDay = 100+14*52)
 
 ## base score for each pair == pairing count in interval in excess of 1
 ## each pairing appearance garners score of 1/cycle length
@@ -80,13 +80,13 @@ longitudinalScore <- function(processed) {
   ), time, k)
 }
 
-tempThing <- longitudinalScore(testAnalysis)[,
-  list(swap=userA>userB, score=N/k), by=list(time,userA, userB)
-][,
-  list(userA=ifelse(swap,userB,userA), userB=ifelse(swap,userA,userB), score, time)
-][,
-  list(score=sum(score)), keyby=list(userA,userB,time)
-]
+# tempThing <- longitudinalScore(testAnalysis)[,
+#   list(swap=userA>userB, score=N/k), by=list(time,userA, userB)
+# ][,
+#   list(userA=ifelse(swap,userB,userA), userB=ifelse(swap,userA,userB), score, time)
+# ][,
+#   list(score=sum(score)), keyby=list(userA,userB,time)
+# ]
 
 detectByScores <- function(dt, discount=.9) {
   temp <- rbindlist(
@@ -103,7 +103,7 @@ detectByScores <- function(dt, discount=.9) {
   # temp[,list(time, score = cumsum(score)),keyby=list(userA)]
 }
 
-ggplot(thing) + theme_bw() +
-  aes(x=time, y=score, color=utype, alpha=utype, group=user) + geom_line() +
-  scale_color_manual(values = c(covert="red", background="black")) +
-  scale_alpha_manual(values = c(covert=1, background=.1))
+# ggplot(thing) + theme_bw() +
+#   aes(x=time, y=score, color=utype, alpha=utype, group=user) + geom_line() +
+#   scale_color_manual(values = c(covert="red", background="black")) +
+#   scale_alpha_manual(values = c(covert=1, background=.1))
