@@ -12,18 +12,20 @@ background <- readRDS("input/pairs.RData")
 
 firstday <- floor(background[,min(start)]/60/60/24)
 
-runs <- list.files(pattern = "RData")
+pth <- commandArgs(trailingOnly = T)[1]
+setwd(pth)
+untar("proc.tar.gz")
+
+runs <- list.files(pth, pattern = "RData", full.names = T)
 pairs <- function(after, before, res) res[
   after < end & start < before, .N, keyby=list(userA, userB, reason)
 ] 
-
-run <- readRDS(runs[1])
 
 ring.sizes <- 3:6
 
 krings <- lapply(ring.sizes, graph.ring)
 
-cores <- min(detectCores()-1, length(ring.sizes))
+cores <- detectCores()
 
 score <- function(s, e, res, t) {
   prs <- pairs(s*24*60*60, e*24*60*60, res)
@@ -46,8 +48,7 @@ score <- function(s, e, res, t) {
   )
 }
 
-processList <- function(run, startDay=100, window = 14, endDay=startDay + 100*window) {
-  cat("starting week, day ", startDay,"\n")
+processList <- function(run, startDay=100, window = 14, endDay=startDay + 52*window) {
   res <- setkey(rbind(background, run[,list(userA, userB, start=login, end=logout, reason)]), start)[, start := start - firstday*60*60*24][, end := end - firstday*60*60*24]
   
   ## TODO add this pairs script
@@ -57,7 +58,6 @@ processList <- function(run, startDay=100, window = 14, endDay=startDay + 100*wi
   results <- score(startDay, startDay+window, res, i)
   
   for (s in seq(startDay+window, endDay, by=window)) {
-    cat("starting week, day ", s,"\n")
     i <- i+1
     appresults <- score(s, s+window, res, i)
     for (j in 1:length(ring.sizes)) results[[j]] <- rbind(results[[j]], appresults[[j]])
@@ -77,7 +77,13 @@ longitudinalScore <- function(processed) {
       k <- dim(kres)[2] - 1
       setnames(rbindlist(apply(colpairs, 2, function(col) kres[,.N,by=c(col, "time")]))[,list(N=sum(N), k=k),keyby=list(time,V1,V2)], c("V1","V2"), c("userA","userB"))
     }, processed, allcolpairs, SIMPLIFY = F)
-  ), time, k)
+  ), time, k)[,
+    list(swap=userA>userB, score=N/k), by=list(time, userA, userB)
+  ][,
+    list(userA=ifelse(swap, userB, userA), userB=ifelse(swap, userA, userB), score, time)
+  ][,
+    list(score=sum(score)), keyby=list(userA,userB,time)
+  ]
 }
 
 # tempThing <- longitudinalScore(testAnalysis)[,
@@ -88,20 +94,33 @@ longitudinalScore <- function(processed) {
 #   list(score=sum(score)), keyby=list(userA,userB,time)
 # ]
 
-detectByScores <- function(dt, discount=.9) {
-  temp <- rbindlist(
-    list(dt[,sum(N/k),keyby=list(time, userA)],
-    dt[,sum(N/k),keyby=list(time, userB)])
-  )
-  temp <- temp[,list(score = sum(V1)),keyby=list(time,userA)]
-  setkey(setnames(temp, "userA", "user"), user, time)
-  users <- sort(unique(temp$userA)); tmax <- temp[,max(time)]
-  ref <- data.table(user=rep(users, each=tmax+1), time=rep(0:tmax, times=length(users)), key=c("user","time"))
-  expand <- temp[ref]
-  expand[is.na(score), score := 0]
-  expand[, list(time, score = Reduce(function(left, right) { left*discount + right }, score, accumulate=T)), by=user]
-  # temp[,list(time, score = cumsum(score)),keyby=list(userA)]
+scoreall <- function(runfile) {
+  run <- readRDS(runfile)
+  prc <- processList(run)
+  scr <- longitudinalScore(prc)
+  newfile <- sub("combos","score", runfile)
+  saveRDS(scr, newfile)
+  cat("finished",newfile,"\n")
 }
+
+chk <- mclapply(runs, scoreall, mc.cores = cores/length(ring.sizes), mc.allow.recursive = T)
+
+# detectByScores <- function(dt, discount=.9) {
+#   temp <- rbindlist(
+#     list(dt[,sum(N/k),keyby=list(time, userA)],
+#     dt[,sum(N/k),keyby=list(time, userB)])
+#   )
+#   temp <- temp[,list(score = sum(V1)),keyby=list(time,userA)]
+#   setkey(setnames(temp, "userA", "user"), user, time)
+#   users <- sort(unique(temp$userA)); tmax <- temp[,max(time)]
+#   ref <- data.table(user=rep(users, each=tmax+1), time=rep(0:tmax, times=length(users)), key=c("user","time"))
+#   expand <- temp[ref]
+#   expand[is.na(score), score := 0]
+#   expand[, list(time, score = Reduce(function(left, right) { left*discount + right }, score, accumulate=T)), by=user]
+#   # temp[,list(time, score = cumsum(score)),keyby=list(userA)]
+# }
+
+
 
 # ggplot(thing) + theme_bw() +
 #   aes(x=time, y=score, color=utype, alpha=utype, group=user) + geom_line() +
