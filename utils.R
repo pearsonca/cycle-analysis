@@ -103,7 +103,7 @@ scoreall <- function(runfile) {
   cat("finished",newfile,"\n")
 }
 
-chk <- mclapply(runs, scoreall, mc.cores = cores/length(ring.sizes), mc.allow.recursive = T)
+chk <- lapply(runs, scoreall)
 
 # detectByScores <- function(dt, discount=.9) {
 #   temp <- rbindlist(
