@@ -8,7 +8,7 @@ require(data.table)
 require(igraph)
 require(parallel)
 
-background <- readRDS("../../input/pairs.RData")
+background <- readRDS("input/pairs.RData")
 
 firstday <- floor(background[,min(start)]/60/60/24)
 
