@@ -2,3 +2,4 @@ input
 output
 *.o*
 *.err*
+.Rproj.user
