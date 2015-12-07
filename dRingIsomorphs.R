@@ -29,8 +29,8 @@ require(igraph)
 
 .verif <- function(...) combn(list(...), 2, function(elems) print(elems[[1]], elems[[2]]) )
 
-tri <- .makeBase(3)
-triAlt <- .refFlip(tri)
+tri <- .makeBase(3) # 1, 1, 1
+triAlt <- .refFlip(tri) # 2, 0, 1 == 0, 1, 2 == 1, 2, 0 == 0, 2, 1
 
 .plotAllIsos(tri, triAlt)
 
@@ -62,6 +62,7 @@ sext34 <- sext22 + edge(6,5,color="red") - edge("5|6")
 
 .plotAllIsos(sext, sextAlt, sext21, sext22, sext23, sext31, sext32, sext33, sext34)
 
-
-
 # store result
+
+isos <- lapply(ls(), get)
+saveRDS(isos, "isos.rds")

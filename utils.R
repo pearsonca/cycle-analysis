@@ -4,6 +4,8 @@
 
 # run in output dir
 
+rm(list=ls())
+
 require(data.table)
 require(igraph)
 require(parallel)
@@ -25,6 +27,8 @@ ring.sizes <- 3:6
 
 krings <- lapply(ring.sizes, graph.ring)
 
+isos <- readRDS("isos.rds")
+
 cores <- detectCores()
 
 score <- function(s, e, res, t) {
@@ -33,7 +37,7 @@ score <- function(s, e, res, t) {
   relabelled <- data.table(userA=remap_ids[prs[,list(user_id=userA)]]$new_user_id, userB=remap_ids[prs[,list(user_id=userB)]]$new_user_id)
   el <- t(as.matrix(relabelled))
   dim(el) <- NULL
-  g <- graph(el, directed = F)
+  g <- graph(el, directed = T)
   mapply(
     function(cyc, sz) if (length(cyc) != 0) {
       src <- unique(t(apply(matrix(unlist(cyc), byrow = T, ncol=sz), 1, sort)))
@@ -43,7 +47,7 @@ score <- function(s, e, res, t) {
     } else {
       data.table(matrix(1, ncol=sz), time=0)[0]
     },
-    mclapply(krings, function(kring, g) graph.get.subisomorphisms.vf2(g, kring), g=g, mc.cores = cores),
+    mclapply(isos, function(kring, g) graph.get.subisomorphisms.vf2(g, kring), g=g, mc.cores = cores),
     ring.sizes
   )
 }
