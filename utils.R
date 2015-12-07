@@ -17,19 +17,16 @@ firstday <- floor(background[,min(start)]/60/60/24)
 args <- commandArgs(trailingOnly = T)
 if (length(args) == 0) args <- "."
 pth <- args[1]
-setwd(pth)
-if (file.exists("proc.tar.gz")) untar("proc.tar.gz")
+
+if (file.exists(paste0(pth,"proc.tar.gz"))) untar(paste0(pth,"proc.tar.gz"))
 
 runs <- list.files(path = pth, pattern = "RData", full.names = T)
 pairs <- function(after, before, res) res[
   after < end & start < before, .N, keyby=list(userA, userB, reason)
 ] 
 
-ring.sizes <- 3:6
-
-krings <- lapply(ring.sizes, graph.ring)
-
-isos <- readRDS("isos.rds")
+isos <- readRDS("input/isos.rds")
+isosizes <- lapply(isos, vcount)
 
 cores <- detectCores()
 
@@ -40,6 +37,7 @@ score <- function(s, e, res, t) {
   el <- t(as.matrix(relabelled))
   dim(el) <- NULL
   g <- graph(el, directed = T)
+  subs <- mclapply(isos, function(kring, g) graph.get.subisomorphisms.vf2(g, kring), g=g, mc.cores = cores)
   mapply(
     function(cyc, sz) if (length(cyc) != 0) {
       src <- unique(t(apply(matrix(unlist(cyc), byrow = T, ncol=sz), 1, sort)))
@@ -49,12 +47,13 @@ score <- function(s, e, res, t) {
     } else {
       data.table(matrix(1, ncol=sz), time=0)[0]
     },
-    mclapply(isos, function(kring, g) graph.get.subisomorphisms.vf2(g, kring), g=g, mc.cores = cores),
-    ring.sizes
+    subs,
+    isosizes
   )
 }
 
 processList <- function(run, startDay=100, window = 14, endDay=startDay + 52*window) {
+  starts <- seq(startDay+window, endDay-window, by=window)
   res <- setkey(rbind(background, run[,list(userA, userB, start=login, end=logout, reason)]), start)[, start := start - firstday*60*60*24][, end := end - firstday*60*60*24]
   
   ## TODO add this pairs script
@@ -63,10 +62,11 @@ processList <- function(run, startDay=100, window = 14, endDay=startDay + 52*win
   i <- 0
   results <- score(startDay, startDay+window, res, i)
   
-  for (s in seq(startDay+window, endDay, by=window)) {
+  for (s in seq(startDay+window, endDay-window, by=window)) {
     i <- i+1
-    appresults <- score(s, s+window, res, i)
-    for (j in 1:length(ring.sizes)) results[[j]] <- rbind(results[[j]], appresults[[j]])
+    print(i)
+    results <- c(results, score(s, s+window, res, i))
+    #for (j in 1:length(isosizes)) results[[j]] <- rbind(results[[j]], appresults[[j]])
   }
   results
 }
@@ -75,7 +75,7 @@ processList <- function(run, startDay=100, window = 14, endDay=startDay + 52*win
 
 ## base score for each pair == pairing count in interval in excess of 1
 ## each pairing appearance garners score of 1/cycle length
-allcolpairs <- lapply(ring.sizes, function(n) combn(paste("V",1:n,sep=""), 2))
+allcolpairs <- lapply(isosizes, function(n) combn(paste("V",1:n,sep=""), 2))
 
 longitudinalScore <- function(processed) {
   setkey(rbindlist(
