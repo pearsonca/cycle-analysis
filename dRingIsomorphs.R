@@ -65,4 +65,4 @@ sext34 <- sext22 + edge(6,5,color="red") - edge("5|6")
 # store result
 
 isos <- lapply(ls(), get)
-saveRDS(isos, "isos.rds")
+saveRDS(isos, "input/isos.rds")

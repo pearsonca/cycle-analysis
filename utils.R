@@ -14,11 +14,13 @@ background <- readRDS("input/pairs.RData")
 
 firstday <- floor(background[,min(start)]/60/60/24)
 
-pth <- commandArgs(trailingOnly = T)[1]
+args <- commandArgs(trailingOnly = T)
+if (length(args) == 0) args <- "."
+pth <- args[1]
 setwd(pth)
 if (file.exists("proc.tar.gz")) untar("proc.tar.gz")
 
-runs <- list.files(pattern = "RData", full.names = T)
+runs <- list.files(path = pth, pattern = "RData", full.names = T)
 pairs <- function(after, before, res) res[
   after < end & start < before, .N, keyby=list(userA, userB, reason)
 ] 
