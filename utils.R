@@ -66,18 +66,16 @@ processList <- function(run, startDay=100, window = 14, endDay=startDay + 52*win
   for (s in seq(startDay+window, endDay-window, by=window)) {
     i <- i+1
     # print(i)
-    results <- c(results, score(s, s+window, res, i))
-    #for (j in 1:length(isosizes)) results[[j]] <- rbind(results[[j]], appresults[[j]])
+    appresults <- score(s, s+window, res, i)
+    for (j in 1:length(isosizes)) results[[j]] <- rbind(results[[j]], appresults[[j]])
   }
   results
 }
 
 scoreall <- function(runfile) {
   run <- readRDS(runfile)
-  prc <- processList(run)
 #  scr <- longitudinalScore(prc)
-  newfile <- sub("combos","score", runfile)
-  saveRDS(pcr, newfile)
+  saveRDS(processList(run), sub("combos","score", runfile))
   cat("finished",newfile,"\n")
 }
 
