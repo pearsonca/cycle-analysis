@@ -79,7 +79,7 @@ scoreall <- function(runfile) {
   cat("finished",newfile,"\n")
 }
 
-chk <- lapply(runs, scoreall)
+lapply(runs, scoreall)
 
 #testAnalysis <- processList(run, window=14, endDay = 100+14*52)
 
